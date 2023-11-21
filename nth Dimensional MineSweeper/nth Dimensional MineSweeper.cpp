@@ -53,29 +53,30 @@ private:
 class board
 {
 public:
-  board(unsigned x, unsigned int y, unsigned int count)
+  board(unsigned int x, unsigned int y, unsigned int z, unsigned int count)
     : width(x)
     , height(y)
+    , depth(z)
     , bombCount(count)
     , hidden(false)
     , hasWon(false)
     , power(0)
   {
-    if (x * y < count)
+    if (x * y * z< count)
       throw std::invalid_argument("Too many bombs");
-    bombs.resize(height);
-    Revealedbombs.resize(height);
-    for (auto& s : bombs)
+    bombs.resize(depth);
+    Revealedbombs.resize(depth);
+    for (auto& y : bombs)
     {
-      s.resize(width);
-      for (auto& i : s)
-        i = 0;
+      y.resize(height);
+      for (auto& x : y)
+        x.resize(width);
     }
-    for (auto& s : Revealedbombs)
+    for (auto& y : Revealedbombs)
     {
-      s.resize(width);
-      for (auto& i : s)
-        i = 0;
+      y.resize(height);
+      for (auto& x : y)
+        x.resize(width);
     }
     std::string ex = std::to_string(x);
     std::string why = std::to_string(y);
@@ -84,6 +85,9 @@ public:
     else
       power = why.length();
   }
+  board(unsigned int x, unsigned count) : board(x, 1, 1, count) {};
+  board(unsigned int x, unsigned int y, unsigned count) : board(x, y, 1, count) {};
+
 
 
 
@@ -93,16 +97,19 @@ public:
     std::mt19937 generator = std::mt19937(d());
     std::uniform_int_distribution<> disX(0, width - 1);
     std::uniform_int_distribution<> disY(0, height - 1);
+    std::uniform_int_distribution<> disZ(0, depth - 1);
+
     for (unsigned int i = 0; i < bombCount; ++i)
     {
       int y = disY(generator);
       int x = disX(generator);
-      if (bombs[y][x] == INT_MAX)
+      int z = disZ(generator);
+      if (bombs[z][y][x] == INT_MAX)
       {
         --i;
         continue;
       }
-      bombs[y][x] = INT_MAX;
+      bombs[z][y][x] = INT_MAX;
 
 
     }
@@ -111,155 +118,164 @@ public:
 
   void populate()
   {
-
-    for (unsigned int y = 0; y < height; ++y)
-    {
-      for (unsigned int x = 0; x < width; ++x)
-      {
-        if (bombs[y][x] == INT_MAX)
-        {
-          //if (x == 0)
-          //  x = x;
-          int top = static_cast<int>(y + 1);
-          int right = static_cast<int>(x + 1);
-          for (int j = static_cast<int>(y) - 1; j <= top; ++j)
+    for (unsigned int z = 0; z < depth; ++z)
+      for (unsigned int y = 0; y < height; ++y)
+        for (unsigned int x = 0; x < width; ++x)
+          if (bombs[z][y][x] == INT_MAX)
           {
-            for (int i = static_cast<int>(x) - 1; i <= right; ++i)
-            {
-              if (i == x && j == y)
-                continue;
-              if (j < 0 || static_cast<unsigned int>(j) >= height)
-                continue;
-              if (i < 0 || static_cast<unsigned int>(i) >= width)
-                continue;
-              if (bombs[j][i] == INT_MAX)
-                continue;
-              if (i == 0)
-                i = i;
-              ++bombs[j][i];
-            }
+            int slice = static_cast<int>(z + 1);
+            int top = static_cast<int>(y + 1);
+            int right = static_cast<int>(x + 1);
+            for (int k = static_cast<int>(z) - 1; k <= slice; ++k)
+              for (int j = static_cast<int>(y) - 1; j <= top; ++j)
+                for (int i = static_cast<int>(x) - 1; i <= right; ++i)
+                {
+                  if (i == x && j == y && k == z)
+                    continue;
+                  if (j < 0 || static_cast<unsigned int>(j) >= height)
+                    continue;
+                  if (i < 0 || static_cast<unsigned int>(i) >= width)
+                    continue;
+                  if (k < 0 || static_cast<unsigned int>(k) >= depth)
+                    continue;
+                  if (bombs[k][j][i] == INT_MAX)
+                    continue;
+                  if (i == 0)
+                    i = i;
+                  ++bombs[k][j][i];
+                }
           }
-        }
-      }
 
-    }
 
   }
   void Clear()
   {
-    for (auto& b : bombs)
-    {
-      for (auto& l : b)
-      {
-        l = 0;
-      }
-    }
-    for (auto& b : Revealedbombs)
-    {
-      for (auto& l : b)
-      {
-        l = 0;
-      }
-    }
+    for (auto& z : bombs)
+      for (auto& y : z)
+        for (auto& x : y)
+          x = 0;
+    for (auto& z : Revealedbombs)
+      for (auto& y : z)
+        for (auto& x : y)
+          x = 0;
   }
   bool Won() { return hasWon; }
 
-  void UnFlag(size_t x, size_t y)
+  void UnFlag(size_t x, size_t y) { UnFlag(x, y, currentSlice); }
+  void UnFlag(size_t x, size_t y, size_t z)
   {
-    unsigned int& pos = Revealedbombs[y][x];
+    if (x < 0 || x >= width)
+      return;
+    if (y < 0 || y >= height)
+      return;
+    if (z < 0 || z >= depth)
+      return;
+    unsigned int& pos = Revealedbombs[z][y][x];
     if (pos == 2)
       pos = 0;
 
   }
-
-  void Flag(size_t x, size_t y)
+  void Flag(size_t x, size_t y) { Flag(x, y, currentSlice); }
+  void Flag(size_t x, size_t y, size_t z)
   {
-    unsigned int& pos = Revealedbombs[y][x];
+    if (x < 0 || x >= width)
+      return;
+    if (y < 0 || y >= height)
+      return;
+    if (z < 0 || z >= depth)
+      return;
+    unsigned int& pos = Revealedbombs[z][y][x];
     if (pos == 0)
       pos = 2;
 
 
     int flagged = 0;
-    for (unsigned int y = 0; y < height; ++y)
-    {
-      for (unsigned int x = 0; x < width; ++x)
-      {
-        if (bombs[y][x] == INT_MAX)
-        {
-          if (Revealedbombs[y][x] == 2)
-            ++flagged;
-        }
-      }
-    }
+    for (unsigned int z = 0; z < depth; ++z)
+      for (unsigned int y = 0; y < height; ++y)
+        for (unsigned int x = 0; x < width; ++x)
+          if (bombs[z][y][x] == INT_MAX)
+            if (Revealedbombs[z][y][x] == 2)
+              ++flagged;
 
     if (flagged == bombCount)
       hasWon = true;
 
   }
-
-  bool Check(size_t x, size_t y)
+  bool Check(size_t x, size_t y) { return Check(x, y, currentSlice); }
+  bool Check(size_t x, size_t y, size_t z)
   {
-    if (bombs[y][x] == INT_MAX)
+    if (x < 0 || x >= width)
+      return false;
+    if (y < 0 || y >= height)
+      return false;
+    if (z < 0 || z >= depth)
+      return false;
+    if (bombs[z][y][x] == INT_MAX)
     {
-      bombs[y][x] = INT_MAX / 2;
+      bombs[z][y][x] = INT_MAX / 2;
       return true;
     }
 
-    Revealedbombs[y][x] = 1;
+    Revealedbombs[z][y][x] = 1;
     bool done = 0;
     while (!done)
     {
       done = true;
+      long long  tDepth = static_cast<long long>(depth);
+
       long long  tHeight = static_cast<long long>(height);
       long long  tWidth = static_cast<long long>(width);
 
-      for (long long y = 0; y < tHeight; ++y)
-      {
-        for (long long x = 0; x < tWidth; ++x)
-        {
-          if (bombs[y][x] != 0)
-            continue;
+      for (long long z = 0; z < tDepth; ++z)
+        for (long long y = 0; y < tHeight; ++y)
+          for (long long x = 0; x < tWidth; ++x)
+          {
+            if (bombs[z][y][x] != 0)
+              continue;
+            if (Revealedbombs[z][y][x] == 0)
+              continue;
 
-          if (x + 1 < tWidth)
-            if (Revealedbombs[y][x] == 1 && bombs[y][x + 1] != INT_MAX && Revealedbombs[y][x + 1] != 1)
-            {
-              Revealedbombs[y][x + 1] = 1;
-              done = false;
-            }
-          if (y + 1 < tWidth)
-            if (Revealedbombs[y][x] == 1 && bombs[y + 1][x] != INT_MAX && Revealedbombs[y + 1][x] != 1)
-            {
-              Revealedbombs[y + 1][x] = 1;
-              done = false;
-            }
-          if (y - 1 >= 0)
-            if (Revealedbombs[y][x] == 1 && bombs[y - 1][x] != INT_MAX && Revealedbombs[y - 1][x] != 1)
-            {
-              Revealedbombs[y - 1][x] = 1;
-              done = false;
-            }
-          if (x - 1 >= 0)
-            if (Revealedbombs[y][x] == 1 && bombs[y][x - 1] != INT_MAX && Revealedbombs[y][x - 1] != 1)
-            {
-              Revealedbombs[y][x - 1] = 1;
-              done = false;
-            }
-        }
-      }
+            for (long long k = z - 1; k < z + 2; ++k)
+              for (long long j = y - 1; j < y + 2; ++j)
+                for (long long i = x - 1; i < x + 2; ++i)
+                {
+                  if (i == x && j == y)
+                    continue;
+                  if (j < 0 || static_cast<unsigned int>(j) >= height)
+                    continue;
+                  if (i < 0 || static_cast<unsigned int>(i) >= width)
+                    continue;
+                  if (k < 0 || static_cast<unsigned int>(k) >= depth)
+                    continue;
+                  if (bombs[k][j][i] == INT_MAX)
+                    continue;
+                  if (Revealedbombs[k][j][i] == 0)
+                    Revealedbombs[k][j][i] = 1;
+                }
+          }
     }
     return false;
   }
   void Hide() { hidden = true; }
   void Reveal() { hidden = false; }
+  unsigned int QuerryDepth() { return currentSlice; }
+  void SetSlice(size_t z) 
+  { 
+    if (z > depth)
+      currentSlice = static_cast<unsigned int>(depth);
+    currentSlice = static_cast<unsigned int>(z); 
+  }
   friend std::ostream& operator<<(std::ostream& os, board& b);
 
 private:
-  std::vector<std::vector<unsigned int>> bombs;
-  std::vector<std::vector<unsigned int>> Revealedbombs;
+  std::vector<std::vector<std::vector<unsigned int>>> bombs;
+  std::vector<std::vector<std::vector<unsigned int>>> Revealedbombs;
 
   unsigned bombCount;
   unsigned int width;
   unsigned int height;
+  unsigned int depth;
+  unsigned int currentSlice = 0;
   size_t power;
   bool hidden;
   bool hasWon;
@@ -306,14 +322,14 @@ std::ostream& operator<<(std::ostream& os, board& b)
     for (int j = 0; j < b.power + 2; ++j)
       os << "-";
   os << std::endl;
-
+  auto z = b.currentSlice;
   for (unsigned int y = 0; y < b.height; ++y)
   {
     os << std::setw(b.power) << y << "|";
     for (unsigned int x = 0; x < b.width; ++x)
     {
-      unsigned int bm = b.bombs[y][x];
-      unsigned int revealed = b.Revealedbombs[y][x];
+      unsigned int bm = b.bombs[z][y][x];
+      unsigned int revealed = b.Revealedbombs[z][y][x];
       if (b.hidden == false)
       {
         if (revealed != 0)
@@ -356,7 +372,7 @@ std::ostream& operator<<(std::ostream& os, board& b)
 
 void EndState(board& b, bool& ended, bool& lost, int& flags, int& count)
 {
-  int x, y;
+  int x, y, z;
   std::cout << "Play Again?\n-------------------\ntype Y for yes\ntype N : no" << std::endl;
   char again = 0;
   while (again != 'y' && again != 'Y' && again != 'n' && again != 'N')
@@ -371,12 +387,16 @@ void EndState(board& b, bool& ended, bool& lost, int& flags, int& count)
     if (Resize == 'y' || Resize == 'Y')
     {
       std::cout << "Please State you board size" << std::endl;
-      std::cout << "Syntax: \"X Y #\"" << std::endl;
+      std::cout << "Syntax: \"X Y Z #\"" << std::endl;
       std::cout << "-----------------------" << std::endl;
       std::cin >> x;
       std::cin >> y;
+      std::cin >> z;
       std::cin >> count;
-      b = board(x, y, count);
+      x = (x < 1 ? 1 : x);
+      y = (y < 1 ? 1 : y);
+      z = (z < 1 ? 1 : z);
+      b = board(x, y, z, count);
     }
     b.Clear();
     b.generate();
@@ -395,13 +415,17 @@ void EndState(board& b, bool& ended, bool& lost, int& flags, int& count)
 int main()
 {
   std::cout << "Welcome\n Please State you board size" << std::endl;
-  std::cout << "Syntax: \"X Y #\"" << std::endl;
+  std::cout << "Syntax: \"X Y Z #\"" << std::endl;
   std::cout << "-----------------------" << std::endl;
-  int x, y, count;
+  int x, y, z, count;
   std::cin >> x;
   std::cin >> y;
+  std::cin >> z;
   std::cin >> count;
-  board b = board(x, y, count);
+  x = (x < 1 ? 1 : x);
+  y = (y < 1 ? 1 : y);
+  z = (z < 1 ? 1 : z);
+  board b = board(x, y, z, count);
   b.generate();
   b.Hide();
   bool ended = false;
@@ -414,44 +438,84 @@ int main()
     std::cout << b << std::endl;
     std::cout << "Possible Commands:" << std::endl;
     std::cout << "------------------" << std::endl;
-    std::cout << "Check[x][y]" << std::endl;
-    std::cout << "Flag[x][y]" << std::endl;
-    std::cout << "Unflag[x][y]" << std::endl;
+    std::cout << "* = parameter is optional" << std::endl;
+    std::cout << "Check[x][y][z*]" << std::endl;
+    std::cout << "Flag[x][y][z*]" << std::endl;
+    std::cout << "Unflag[x][y][z*]" << std::endl;
+    std::cout << "Depth[z]" << std::endl;
     std::cout << "------------------" << std::endl;
-    std::cout << "Flags: " << flags << "/" <<count << std::endl;
+    std::cout << "Your current depth is: " << b.QuerryDepth()<< std::endl;
+    std::cout << "Flags: " << flags << "/" << count << std::endl;
     std::cout << "Last Command: " << lastCommand << std::endl;
     std::cout << "------------------" << std::endl;
     std::cout << std::endl;
     std::string command;
     std::cin >> command;
     lastCommand = command;
-    if (command.find("[") != std::string::npos) 
+    if (command.find("[") != std::string::npos)
     {
       std::string type = command.substr(0, command.find('['));
-        command.erase(command.begin(), command.begin() + command.find('[') + 1);
-        size_t index1 = std::stoi(command);
-        size_t pos = command.find('[');
+      command.erase(command.begin(), command.begin() + command.find('[') + 1);
+      size_t index1 = std::stoi(command);
+      size_t index2 = SIZE_MAX;
+      size_t index3 = SIZE_MAX;
+      size_t pos = command.find('[');
+      if (pos != std::string::npos)
+      {
         command.erase(command.begin(), command.begin() + pos + 1);
-        size_t index2 = std::stoi(command);
-
-      if (type == "Check") 
+        index2 = std::stoi(command);
+      }
+      pos = command.find('[');
+      if (pos != std::string::npos)
+      {
+        command.erase(command.begin(), command.begin() + pos + 1);
+        index3 = std::stoi(command);
+      }
+      if (type == "Check" && index3 == SIZE_MAX)
       {
         std::cout << "Checking position: " << index1 << " , " << index2 << std::endl;
         lost = b.Check(index1, index2);
       }
-      if (type == "Flag") 
+      else if (type == "Check") 
+      {
+        std::cout << "Checking position: " << index1 << " , " << index2 << " , " << index3 << std::endl;
+        lost = b.Check(index1, index2, index3);
+      }
+      if (type == "Flag" && index3 == SIZE_MAX)
       {
         std::cout << "Flagging position: " << index1 << " , " << index2 << std::endl;
         b.Flag(index1, index2);
         ++flags;
       }
-      if (type == "Unflag")
+      else if (type == "Flag")
       {
-        std::cout << "Flagging position: " << index1 << " , " << index2 << std::endl;
+        std::cout << "Flagging position: " << index1 << " , " << index2 << " , " << index3 << std::endl;
+        b.Flag(index1, index2, index3);
+        ++flags;
+      }
+      if (type == "Unflag" && index3 == SIZE_MAX)
+      {
+        std::cout << "Unflagging position: " << index1 << " , " << index2 << std::endl;
         b.UnFlag(index1, index2);
         --flags;
       }
+      else if(type == "Unflag")
+      {
+        std::cout << "Unflagging position: " << index1 << " , " << index2 << " , " << index3 << std::endl;
+        b.UnFlag(index1, index2, index3);
+        --flags;
+      }
+      if (type == "Depth")
+      {
+        std::cout << "Setting Depth to: " << index1 << std::endl;
+        b.SetSlice(index1);
+      }
     }
+    if (command == "Reveal") 
+      b.Reveal();
+    if (command == "Hide") 
+      b.Hide();
+
     if (b.Won())
     {
       system("clear");

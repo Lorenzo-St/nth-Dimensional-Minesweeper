@@ -62,7 +62,7 @@ public:
     , hasWon(false)
     , power(0)
   {
-    if (x * y * z< count)
+    if (x * y * z < count)
       throw std::invalid_argument("Too many bombs");
     bombs.resize(depth);
     Revealedbombs.resize(depth);
@@ -259,11 +259,11 @@ public:
   void Hide() { hidden = true; }
   void Reveal() { hidden = false; }
   unsigned int QuerryDepth() { return currentSlice; }
-  void SetSlice(size_t z) 
-  { 
+  void SetSlice(size_t z)
+  {
     if (z > depth)
       currentSlice = static_cast<unsigned int>(depth);
-    currentSlice = static_cast<unsigned int>(z); 
+    currentSlice = static_cast<unsigned int>(z);
   }
   friend std::ostream& operator<<(std::ostream& os, board& b);
 
@@ -444,7 +444,7 @@ int main()
     std::cout << "Unflag[x][y][z*]" << std::endl;
     std::cout << "Depth[z]" << std::endl;
     std::cout << "------------------" << std::endl;
-    std::cout << "Your current depth is: " << b.QuerryDepth()<< std::endl;
+    std::cout << "Your current depth is: " << b.QuerryDepth() << std::endl;
     std::cout << "Flags: " << flags << "/" << count << std::endl;
     std::cout << "Last Command: " << lastCommand << std::endl;
     std::cout << "------------------" << std::endl;
@@ -456,27 +456,39 @@ int main()
     {
       std::string type = command.substr(0, command.find('['));
       command.erase(command.begin(), command.begin() + command.find('[') + 1);
-      size_t index1 = std::stoi(command);
+
+
+      size_t index1 = SIZE_MAX;
+
       size_t index2 = SIZE_MAX;
       size_t index3 = SIZE_MAX;
       size_t pos = command.find('[');
-      if (pos != std::string::npos)
+      try
       {
-        command.erase(command.begin(), command.begin() + pos + 1);
-        index2 = std::stoi(command);
+        index1 = std::stoi(command);
+        if (pos != std::string::npos)
+        {
+          command.erase(command.begin(), command.begin() + pos + 1);
+          index2 = std::stoi(command);
+        }
+        pos = command.find('[');
+        if (pos != std::string::npos)
+        {
+          command.erase(command.begin(), command.begin() + pos + 1);
+          index3 = std::stoi(command);
+        }
       }
-      pos = command.find('[');
-      if (pos != std::string::npos)
+      catch (...)
       {
-        command.erase(command.begin(), command.begin() + pos + 1);
-        index3 = std::stoi(command);
+        goto end;
       }
+
       if (type == "Check" && index3 == SIZE_MAX)
       {
         std::cout << "Checking position: " << index1 << " , " << index2 << std::endl;
         lost = b.Check(index1, index2);
       }
-      else if (type == "Check") 
+      else if (type == "Check")
       {
         std::cout << "Checking position: " << index1 << " , " << index2 << " , " << index3 << std::endl;
         lost = b.Check(index1, index2, index3);
@@ -499,7 +511,7 @@ int main()
         b.UnFlag(index1, index2);
         --flags;
       }
-      else if(type == "Unflag")
+      else if (type == "Unflag")
       {
         std::cout << "Unflagging position: " << index1 << " , " << index2 << " , " << index3 << std::endl;
         b.UnFlag(index1, index2, index3);
@@ -511,9 +523,10 @@ int main()
         b.SetSlice(index1);
       }
     }
-    if (command == "Reveal") 
+    end:
+    if (command == "Reveal")
       b.Reveal();
-    if (command == "Hide") 
+    if (command == "Hide")
       b.Hide();
 
     if (b.Won())

@@ -13,10 +13,65 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Libraries">
+      <UniqueIdentifier>{f35e304b-7fc5-4cf5-b516-fa4d6023df85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game">
+      <UniqueIdentifier>{5376155b-8c02-4b95-afee-06b6a33bde15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game\Board">
+      <UniqueIdentifier>{6154eaf7-46ea-4d32-b945-1bde94881d58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Backend">
+      <UniqueIdentifier>{8634e408-83da-461b-ab9f-e1fee8e01cd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Backend\Shaders">
+      <UniqueIdentifier>{61945039-11c6-4050-9b0a-f53bedb87262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Backend\Camera">
+      <UniqueIdentifier>{917fe751-3810-424d-9b93-dc85b5ef7a9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Backend\Fonts">
+      <UniqueIdentifier>{7eccd52b-f48b-4f18-87d0-9c629354d854}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nth Dimensional MineSweeper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\GLAD\glad.c">
+      <Filter>Source Files\Libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="board.cpp">
+      <Filter>Source Files\Game\Board</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderBackend.cpp">
+      <Filter>Source Files\Backend</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cexprString.h">
+      <Filter>Source Files\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="board.h">
+      <Filter>Source Files\Game\Board</Filter>
+    </ClInclude>
+    <ClInclude Include="consoleColors.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderBackend.h">
+      <Filter>Source Files\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files\Backend\Camera</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Managed\Shaders\main.frag">
+      <Filter>Source Files\Backend\Shaders</Filter>
+    </None>
+    <None Include="..\Managed\Shaders\main.vert">
+      <Filter>Source Files\Backend\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
